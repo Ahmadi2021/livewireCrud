@@ -11,7 +11,7 @@ class Category extends Component
     public $isEdit = false;
     public function render()
     {
-        $this->categories = CategoryModel::all();
+        $this->categories = CategoryModel::orderBy('id','desc')->get();
         return view('livewire.category');
     }
 
@@ -22,16 +22,62 @@ class Category extends Component
         $this->isEdit = false;
     }
 
+    public function create()
+    {
+        $this->resetInput();
+        session()->forget('message');
+        $this->js("window.dispatchEvent(new CustomEvent('showModal'))");
+    }
+
     public function store()
     {
         $this->validate([
-            'title' => 'required|min:3',
+            'title' => 'required|min:2',
         ]);
         CategoryModel::create([
             'title' => $this->title
         ]);
         session()->flash('message', 'Created successfully');
         $this->resetInput();
-        $this->dispatchBrowserEvent('hideModal');
+        $this->js('window.dispatchEvent(new CustomEvent("hideModal"))');
+    }
+
+    public function edit($id){
+        $cate = CategoryModel::findOrFail($id);
+        $this->title = $cate->title;
+        $this->id = $cate->id;
+        $this->isEdit = true;
+        session()->forget('message');
+        $this->js("window.dispatchEvent(new CustomEvent('showModal'))");
+    }
+
+    public function update()
+    {
+        $this->validate([
+            'title' => 'required|min:2',
+        ]);
+        if ($this->id) {
+            $cate = CategoryModel::findOrFail($this->id);
+            $cate->update([
+                'title' => $this->title
+            ]);
+
+            session()->flash('message', 'Updated successfully');
+            $this->resetInput();
+            $this->js('window.dispatchEvent(new CustomEvent("hideModal"))');
+        }
+
+    }
+
+    public function delete($id){
+        $cate = CategoryModel::findOrFail($id);
+        $cate->delete();
+        session()->flash('message', 'Deleted Successfully');
+    }
+
+    public function resetValidationState()
+    {
+        $this->resetErrorBag();
+        $this->reset('title'); // Optional: also reset the field
     }
 }
